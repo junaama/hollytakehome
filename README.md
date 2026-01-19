@@ -1,98 +1,71 @@
-# Holly Engineering Take-Home Assignment
+# Holly Take Home
 
 ## Overview
 
-This take-home assignment is designed to evaluate your technical skills across several areas important to our engineering team. It's completely fine if you don't finish everything - we're more interested in understanding your approach and thought process.
+This is a simple chat allowing users to query jobs and salary information built with Next.JS, Typescript and using Google Gemini AI model or Groq free tier llama model!
 
-## Important: AI Usage & Assessment Philosophy
-
-**We're AI-friendly at Holly** - we use AI tools in our day-to-day work. However, this take-home assessment is specifically designed to evaluate **your individual problem-solving abilities and coding skills**.
-
-When AI tools are heavily used, it becomes difficult for us to assess:
-
-- How you think through problems and debug issues
-- Your ability to refactor and maintain code
-- Your understanding of the codebase and architectural decisions
-- Your attention to detail and code quality
-
-**Please use AI tools minimally, if at all.** We want to see your work, not AI-generated code. If you do use AI assistance, please clearly document what was AI-generated versus your own work in your submission writeup.
-
-_(Yes, we're aware of the irony that this README was refined with AI assistance!)_
-
-## Goals
-
-This assignment evaluates your skills in:
-
-1. **Data processing** - Efficiently filtering and matching data before sending to LLM
-2. **Next.js development** - Understanding Next.js patterns and best practices
-3. **LLM integration** - Properly structuring prompts and managing context
-4. **TypeScript** - Type safety and proper typing throughout
-5. **Code quality** - Clean, maintainable code with attention to detail
-
-## Getting Started
+## Instructions
 
 1. Clone this repository to your local machine
 2. Install dependencies
-3. Understand the requirements
-4. Start building!
+` bun install `
+3. Set your environment variables
+` cp env.example .env.local `
+4. Start the development server `bun dev`
 
-## The Challenge
+## How to get your Gemini or Groq API keys
+1. Google gemini -> Get yours at https://aistudio.google.com/app/api-keys 
+2. Groq -> Get one at https://console.groq.com/keys
 
-You'll build a simple chat interface that allows users to query job and salary information stored in JSON files. Think of it as a basic HR assistant that can answer questions about job descriptions and compensation. The interface doesn't have to be anything fancy.
+## Process
 
-## Requirements
+### Approach
 
-### 1. Chat Interface
+1. From the requirement to pass in external data before having the LLM process the user's query I looked into RAG ( Retrieval Augmented Generation ), a process that enchances LLM responses from prompts by attaching relevant external data.
+2. The restriction against fuzzy matching made me decide to look into more traditional rule based matching/parsers based on the keyvalues from the given data.
+3. Most of the RAG tutorials / resources were overkill for this task
+4. Flow chart I decided on was User query -> Parser -> Match to jobs -> Format and build context -> Generate LLM response -> Return
+5. Chose Google Gemini as LLM because I have access to it and also Groq as fallback using their free tier
 
-- Create a dedicated chat page (`/chat`) with a message interface
-- Style the interface so human messages appear on the right and AI messages on the left (standard chat UI convention)
-- The UI doesn't need to be elaborate - focus on functionality over aesthetics
 
-![Sample Application](public/sample.png)
 
-### 2. LLM Integration
+### Challenges
 
-- Integrate with an LLM of your choice
-- The LLM should be able to answer questions about the data in the job descriptions and salaries datasets
-- **Critical Requirement**: Your implementation should parse the user's query to identify which specific job they're asking about, and only pass the relevant job information to the LLM - do not pass the entire dataset to the LLM with each request
-- Example queries and responses:
-  - "What are the knowledge, skills, and abilities for the Assistant Sheriff San Diego County position?"
-    - "The Assistant Sheriff in San Diego County should have knowledge of: local law enforcement agencies in San Diego County, local/state/federal laws, law enforcement rules and regulations, community-based policing..."
-  - "What is the salary for the Assistant Chief Probation Officer in San Bernardino?"
-    - "The Assistant Chief Probation Officer in San Bernardino has a salary range from $70.38 to $101.00 per hour (salary grades 1 and 2)."
+1. Key areas of inconsistent data format I needed to normalize like the extra whitespace in salary grades
+2. I contemplated using an LLM call to for the matching + parsing but since it's a small dataset opted for creating jurisdiction maps, token based scoring, etc
+3. Handling ambiguous queries
+4. Jurisdiction mapping was an edge case as 'sdcounty' appeared as a jurisdiction with 'San Diego' mentioned in the description but the same wasn't true for 'sanbernardino'
+5. Handling Job codes not matching with job titles such as 0265 job code being for 'kerncounty' jurisdiction but 0265 job code being marked for 'sdcounty' in job descriptions. Originally failed the query test case: `What are the salaries for 0265 jobs?` then I adjusted to try exact job match first, then fallback to job code 
 
-## Technical Requirements
 
-- Use Next.js for the application framework
-- Implement proper TypeScript typing throughout the application
-- Implement server actions where appropriate
-- **Do not use fuzzy string matching libraries** (e.g., Levenshtein distance, fuzzywuzzy, string-similarity) for matching user queries to job records. We want to see your approach to handling query variations.
+### Where I used AI
 
-## Evaluation Criteria
+1. Copilot / Autocomplete while coding
+2. Searching/resource gathering for best solution
 
-We'll be evaluating:
+### Next steps
 
-1. **Data Processing Efficiency** - How efficiently you process and filter data before sending to the LLM (this is a key evaluation point)
-2. **Matching Strategy** - Your approach to matching user queries to job records without fuzzy matching - we're interested in seeing creative and effective solutions
-3. **Code Quality** - Clean, maintainable code without debug artifacts
-4. **Attention to Detail** - Accurate understanding of the data and consistent documentation
-5. **Problem-Solving Approach** - How you think through challenges and make architectural decisions
+1. Currently this doesn't support context loading or memory management so user query cannot reference previous queries.
+2. Currently queries about multiple roles only output information on one role so I would adjust getBestMatch to also return top 3 matches and adjust building the context beforre passing to the LLM
 
-## Submission
+## File structure
 
-**Please submit within 3 days** of receiving this assignment. We encourage you to spend only a few hours working on it - we want to gauge your thought process and problem-solving approach, not see a polished production-ready application.
+- /lib
+   - types.ts -> Added Typescript types for jobs, salaries, parsed queries, and match results.
 
-Please submit:
+   - data.ts -> Load and preprocess JSON data (normalize jurisdictions, clean salaries)
 
-1. The complete codebase in a public GitHub repository
-2. **Clear, accurate instructions** for running the application locally
-3. A brief writeup explaining:
-   - Your approach and technologies used
-   - Any challenges you faced
-   - **What parts, if any, were AI-assisted** - being transparent about this helps us better understand your thought process and decision-making
+   - parser.ts -> Rule-based query parser
 
-## Notes
+   - matching.ts -> Token-based scoring algorithm (no fuzzy libraries)
 
-- Focus on demonstrating your understanding of Next.js patterns, TypeScript, and clean code organization
-- Don't spend too much time on UI aesthetics - functionality is the priority
-- **We'll be evaluating how efficiently you process and filter data before sending to the LLM** - this is a core requirement
+   - actions.ts -> Single server action function generateResponse(query, context)
+
+- /app/chat/
+   - page.tsx -> Created simple UI for users to view their messages on the right and LLM messages on the left, and input form
+
+### Resources
+- https://redis.io/blog/what-is-fuzzy-matching/
+- https://medium.com/@dinabavli/rag-basics-basic-implementation-of-retrieval-augmented-generation-rag-e80e0791159d
+- https://nextjs.org/docs/13/app/building-your-application/data-fetching/server-actions-and-mutations
+- https://ai-sdk.dev/cookbook/guides/rag-chatbot

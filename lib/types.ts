@@ -1,0 +1,51 @@
+export type JobDescription = {
+    jurisdiction: string
+    code: string
+    title: string
+    description: string
+}
+
+export type Salary = {
+    'Jurisdiction': string
+    'Job Code': string
+    'Salary grade 1': string
+    'Salary grade 2': string
+    'Salary grade 3': string
+    'Salary grade 4': string
+    'Salary grade 5': string
+    'Salary grade 6': string
+    'Salary grade 7': string
+    'Salary grade 8': string
+    'Salary grade 9': string
+    'Salary grade 10': string
+    'Salary grade 11': string
+    'Salary grade 12': string
+    'Salary grade 13': string
+    'Salary grade 14': string
+}
+
+export type ParsedQuery = {
+    jurisdiction: string | null
+    jobTitle: string | null
+    jobCode: string | null
+    tokens: string[]
+}
+
+export type MatchResult = {
+    job: JobDescription
+    salary: Salary | null
+    score: number
+}
+
+export type JobContext = {
+    title: string
+    jurisdiction: string
+    code: string
+    description: string
+    salaryGrades: { grade: number; amount: string }[]
+}
+
+export type ChatMessage = {
+    author: 'human' | 'ai'
+    text: string
+}
